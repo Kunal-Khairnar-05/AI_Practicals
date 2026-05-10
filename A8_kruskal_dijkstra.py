@@ -1,75 +1,56 @@
 import heapq
 
-def kruskal_mst(graph):
-    """Kruskal's algorithm: Sort edges, use Union-Find to build MST."""
-    parent = {n: n for n in graph}
-    rank = {n: 0 for n in graph}
+def kruskal_mst(n, edges):
+    edges.sort(key=lambda x: x[2]) # Greedy sort
+    parent = list(range(n))
+    
+    def find(i):
+        if parent[i] == i: return i
+        parent[i] = find(parent[i]) # Path compression
+        return parent[i]
 
-    def find(x):
-        while parent[x] != x:
-            parent[x] = parent[parent[x]]
-            x = parent[x]
-        return x
-
-    def union(a, b):
-        a, b = find(a), find(b)
-        if a == b:
-            return False
-        if rank[a] < rank[b]:
-            parent[a] = b
-        elif rank[a] > rank[b]:
-            parent[b] = a
-        else:
-            parent[b] = a
-            rank[a] += 1
-        return True
-
-    seen, edges = set(), []
-    for u in graph:
-        for v, w in graph[u].items():
-            key = tuple(sorted((u, v)))
-            if key not in seen:
-                seen.add(key)
-                edges.append((w, u, v))
-
-    mst, cost = [], 0
-    for w, u, v in sorted(edges):
-        if union(u, v):
-            mst.append((u, v, w))
-            cost += w
-            if len(mst) == len(graph) - 1:
-                break
-
-    return mst, cost
+    mst_weight = 0
+    for u, v, w in edges:
+        root_u, root_v = find(u), find(v)
+        if root_u != root_v:
+            parent[root_u] = root_v
+            mst_weight += w
+    return mst_weight
 
 
 def dijkstra(graph, start):
-    """Dijkstra's algorithm: Find shortest paths from start to all nodes."""
-    dist = {n: float('inf') for n in graph}
-    dist[start] = 0
+    # Initialize distances with infinity, start node with 0
+    distances = {node: float('inf') for node in graph}
+    distances[start] = 0
+    
+    # Priority queue stores (distance, node)
     pq = [(0, start)]
-
+    
     while pq:
-        d, u = heapq.heappop(pq)
-        if d > dist[u]:
+        current_dist, u = heapq.heappop(pq)
+        
+        # If we found a longer path already, skip
+        if current_dist > distances[u]:
             continue
-        for v, w in graph[u].items():
-            if dist[u] + w < dist[v]:
-                dist[v] = dist[u] + w
-                heapq.heappush(pq, (dist[v], v))
+            
+        for v, weight in graph[u].items():
+            distance = current_dist + weight
+            
+            # Greedy Step: If this new path is shorter, update and explore
+            if distance < distances[v]:
+                distances[v] = distance
+                heapq.heappush(pq, (distance, v))
+                
+    return distances
 
-    return dist
+edges = [(0, 1, 1), (0, 2, 4), (1, 2, 2), (1, 3, 5)]
+print("Kruskal's MST weight:", kruskal_mst(4, edges))
 
+graph = {
+    'A': {'B': 4, 'C': 2},
+    'B': {'C': 5, 'D': 10},
+    'C': {'D': 3},
+    'D': {}
+}
 
-if __name__ == "__main__":
-    graph = {
-        'A': {'B': 2, 'C': 3},
-        'B': {'A': 2, 'C': 1, 'D': 1, 'E': 4},
-        'C': {'A': 3, 'B': 1, 'F': 5},
-        'D': {'B': 1, 'E': 1},
-        'E': {'B': 4, 'D': 1, 'F': 1},
-        'F': {'C': 5, 'E': 1}
-    }
-
-    print("Kruskal MST:", kruskal_mst(graph))
-    print("Dijkstra from A:", dijkstra(graph, 'A'))
+print(f"Shortest distances from A: {dijkstra(graph, 'A')}")

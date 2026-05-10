@@ -8,7 +8,7 @@ def hospital_expert_system():
     rash = input("Do you have a skin rash or itching? ").lower()
 
     print("\n--- Diagnosis Result ---")
- 
+    
     if fever == "yes" and cough == "yes" and chest_pain == "no":
         print("Possible Condition: Common Flu or Viral Infection")
         print("Recommended Department: General Medicine")

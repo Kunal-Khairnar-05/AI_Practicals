@@ -1,77 +1,46 @@
 import heapq
 
+def prim_mst(n, adj):
+    pq = [(0, 0)] # (weight, vertex)
+    visited = [False] * n
+    total_weight = 0
+    
+    while pq:
+        w, u = heapq.heappop(pq)
+        if not visited[u]:
+            visited[u] = True
+            total_weight += w
+            for v, weight in adj[u]:
+                if not visited[v]:
+                    heapq.heappush(pq, (weight, v))
+    return total_weight
 
-def prim_mst(graph, start):
-    visited = {start}
-    edges = [(w, start, v) for v, w in graph[start].items()]
-    heapq.heapify(edges)
-    mst, cost = [], 0
+def kruskal_mst(n, edges):
+    edges.sort(key=lambda x: x[2]) # Greedy sort
+    parent = list(range(n))
+    
+    def find(i):
+        if parent[i] == i: return i
+        parent[i] = find(parent[i]) # Path compression
+        return parent[i]
 
-    while edges and len(visited) < len(graph):
-        w, u, v = heapq.heappop(edges)
-        if v in visited:
-            continue
-        visited.add(v)
-        mst.append((u, v, w))
-        cost += w
-        for n, nw in graph[v].items():
-            if n not in visited:
-                heapq.heappush(edges, (nw, v, n))
+    mst_weight = 0
+    for u, v, w in edges:
+        root_u, root_v = find(u), find(v)
+        if root_u != root_v:
+            parent[root_u] = root_v
+            mst_weight += w
+    return mst_weight
 
-    return mst, cost
+# Example usage
+n = 4
+adj = {
+    0: [(1, 1), (2, 4)],
+    1: [(0, 1), (2, 2), (3, 5)],
+    2: [(0, 4), (1, 2)],
+    3: [(1, 5)]
+}
 
-
-def kruskal_mst(graph):
-    parent = {n: n for n in graph}
-    rank = {n: 0 for n in graph}
-
-    def find(x):
-        while parent[x] != x:
-            parent[x] = parent[parent[x]]
-            x = parent[x]
-        return x
-
-    def union(a, b):
-        a, b = find(a), find(b)
-        if a == b:
-            return False
-        if rank[a] < rank[b]:
-            parent[a] = b
-        elif rank[a] > rank[b]:
-            parent[b] = a
-        else:
-            parent[b] = a
-            rank[a] += 1
-        return True
-
-    seen, edges = set(), []
-    for u in graph:
-        for v, w in graph[u].items():
-            key = tuple(sorted((u, v)))
-            if key not in seen:
-                seen.add(key)
-                edges.append((w, u, v))
-
-    mst, cost = [], 0
-    for w, u, v in sorted(edges):
-        if union(u, v):
-            mst.append((u, v, w))
-            cost += w
-            if len(mst) == len(graph) - 1:
-                break
-
-    return mst, cost
-
-
-if __name__ == "__main__":
-    graph = {
-        'A': {'B': 2, 'C': 3},
-        'B': {'A': 2, 'C': 1, 'D': 1, 'E': 4},
-        'C': {'A': 3, 'B': 1, 'F': 5},
-        'D': {'B': 1, 'E': 1},
-        'E': {'B': 4, 'D': 1, 'F': 1},
-        'F': {'C': 5, 'E': 1}
-    }
-
-    print("Prim:", prim_mst(graph, 'A'))
-    print("Kruskal:", kruskal_mst(graph))
+edges = [(0, 1, 1), (0, 2, 4), (1, 2, 2), (1, 3, 5)]
+print("Prim's MST weight:", prim_mst(n, adj))
+print("Kruskal's MST weight:", kruskal_mst(n, edges))
